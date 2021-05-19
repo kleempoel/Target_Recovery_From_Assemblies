@@ -1,0 +1,60 @@
+# Dry run
+snakemake -np stats/11805.txt
+# Run multiple samples
+snakemake --cores 1 stats/7202.txt stats/9483.txt
+# Also works like this 
+snakemake -p --cores 1 stats/{11805,7202,9483}.txt
+# Create a DAG directed acyclic graph
+snakemake --dag stats/{11805,7202,9483}.txt | dot -Tsvg > dag.svg
+# Testing expand
+snakemake -p --cores 1 stats_all.txt
+snakemake -p --cores 1 stats_merge.txt
+# DAG of expand 
+snakemake --dag stats_all.txt | dot -Tsvg > dag.svg
+#Testing custom python script
+snakemake -p --cores 1 my_stats.txt # Did not work
+snakemake -p --cores 1 stats_direct.txt # Worked
+# Force execution
+snakemake --cores 1 --forceall stats/11805.txt 
+
+
+## Assemblies test
+
+srun --pty bash
+cd /mnt/shared/scratch/kleempoe/paftol/assemblies/
+snakemake --cores 4  out_blast/GCA_001375635.1.blast
+snakemake --cores 4  out_blast/GCA_001375635.1.blast out_blast/GCA_004349715.1.blast out_blast/GCA_000441915.1.blast
+				
+# Trying with slurm
+snakemake --cluster "sbatch -p short -N 1 -c 20 -J A_blastn" --jobs 3 out_blast/GCA_001375635.1.blast out_blast/GCA_004349715.1.blast out_blast/GCA_000441915.1.blast # WORKS!
+
+# blast to fasta python code and integrating in snakefile
+python targets_from_blast.py out_blast/GCA_000441915.1.blast GCA_000441915_test.fasta
+snakemake --cluster "sbatch -p short -N 1 -c 20 -J A_blastn" --jobs 3 out_targets/GCA_001375635.1.fasta  out_targets/GCA_004349715.1.fasta out_targets/GCA_000441915.1.fasta
+# Trying to launch snakemake from a batch script
+sbatch assemblies_snk.sh #WORKED! 
+# Trying to launch snakemake from a batch script with a list of files in snakefile
+sbatch assemblies_snk.sh
+GCA_902806635.1, GCA_002091855.1, GCA_016097815.1 failed
+
+# Testing with exonerate etc
+snakemake --cores 1  Alignments/GCA_001375635.1.aln Alignments/GCA_004349715.1.aln
+#Same using batch script
+sbatch assemblies_snk.sh
+
+
+## Tips for large file lists
+http://ivory.idyll.org/blog/2020-snakemake-hacks-collections-files.html
+https://snakemake.readthedocs.io/en/stable/project_info/faq.html#how-do-i-run-my-rule-on-all-files-of-a-certain-directory
+
+## Ressource SnakeMake Slurm
+https://ulhpc-tutorials.readthedocs.io/en/latest/bio/snakemake/
+https://accio.github.io/programming/2020/06/16/Snakemake-with-slurm.html
+https://bluegenes.github.io/snakemake-via-slurm/
+https://www.biostars.org/p/369494/
+https://snakemake.readthedocs.io/en/stable/tutorial/advanced.html
+https://github.com/rusalkaguy/snakemake-slurm-tutorial
+https://stackoverflow.com/questions/46506784/how-do-the-terms-job-task-and-step-relate-to-each-other/46532581#46532581
+
+#Multiple commands https://stackoverflow.com/questions/45553762/recommended-way-to-do-multiple-shell-commands-with-shell
+# Gap open blastn https://www.ncbi.nlm.nih.gov/books/NBK279684/
